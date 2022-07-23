@@ -35,7 +35,7 @@ Hey, Netology
 Опубликуйте созданный форк в своем репозитории и предоставьте ответ в виде ссылки на https://hub.docker.com/username_repo.
 
 
-Установим docker
+Шаг 1. Установим docker
 ```
 vagrant@vagrant:~$ sudo mkdir -p /etc/apt/keyrings
 vagrant@vagrant:~$ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
@@ -124,13 +124,13 @@ Created symlink /etc/systemd/system/sockets.target.wants/docker.socket → /lib/
 Processing triggers for man-db (2.9.1-1) ...
 Processing triggers for systemd (245.4-4ubuntu3.17) ...
 ```
-проверим установленный докер
+Шаг 2. проверим установленный докер
 ```
 vagrant@vagrant:~$ sudo docker ps
 CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
 
 ```
-Получим image NGINX 
+Шаг 3. Получим image NGINX 
 ```
 vagrant@vagrant:~$ sudo docker pull nginx
 Using default tag: latest
@@ -150,7 +150,7 @@ REPOSITORY   TAG       IMAGE ID       CREATED      SIZE
 nginx        latest    41b0e86104ba   3 days ago   142MB
 ```
 
-Настройка конфигурации для Nginx сохраняем в файле execise1.conf
+Шаг 4. Настройка конфигурации для Nginx сохраняем в файле execise1.conf
 
 
 server {
@@ -172,8 +172,8 @@ server {
 }
 
 
-Создаем простую web страницу в index.html
-
+Шаг 5. Создаем простую web страницу в index.html
+```
 <html>
 <head>
 Hey, Netology
@@ -181,12 +181,21 @@ Hey, Netology
 <body>
 </body>
 </html>" > index.html
+```
+Шаг 6. Записываем dockerfile 
 
-Записываем dockerfile 
+```
+FROM    nginx
 
-------взять из системы
+RUN     mkdir /var/www/
+RUN     mkdir /var/www/execise1
 
+COPY    index.html /var/www/execise1
+COPY    execise1.conf /etc/nginx/conf.d
+```
+Шаг 7. Создаем свой локальный image
 
+```
 vagrant@vagrant:~/docker$ sudo docker build -t kaplin-nginx:first_ver .
 Sending build context to Docker daemon  6.144kB
 Step 1/5 : FROM nginx
@@ -205,14 +214,17 @@ Step 5/5 : COPY execise1.conf /etc/nginx/conf.d
  ---> 4f4cb66b74a1
 Successfully built 4f4cb66b74a1
 Successfully tagged kaplin-nginx:first_ver
-
+```
+Шаг 8. Проверяем, что образ появился
+```
 vagrant@vagrant:~/docker$ sudo docker images
 REPOSITORY     TAG         IMAGE ID       CREATED          SIZE
 kaplin-nginx   first_ver   4f4cb66b74a1   42 seconds ago   142MB
 nginx          latest      41b0e86104ba   4 days ago       142MB
 hello-world    latest      feb5d9fea6a5   9 months ago     13.3kB
-
-
+```
+Шаг 9. Проверяем, что можно создать контейнер с помощью нового образа и внутри контейнера рабоет nginx
+```
 vagrant@vagrant:~/docker$ sudo docker run kaplin-nginx:first_ver
 /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
 /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
@@ -249,8 +261,9 @@ Hey, Netology
 </body>
 </html>
 root@0dce3d5bd63b:/#
-
-
+```
+Шаг 10. Отправим локальный image на Docker Hub
+```
 sudo docker tag  kaplin-nginx:first_ver kapelman/05-virt-02-iaac:first-image
 
 docker push kapelman/05-virt-02-iaac:tagname
@@ -271,8 +284,8 @@ c03189a5ef70: Pushed
 1c99a7efe9d9: Pushed
 43b3c4e3001c: Pushed
 first-image: digest: sha256:4057cbd221ee4e1c4747ae5c2ee366319cee323e6e48dddadac9066bb42c8409 size: 2398
-
-
+```
+Ссылка на образ:
 https://hub.docker.com/layers/258335888/kapelman/05-virt-02-iaac/first-image/images/sha256-4057cbd221ee4e1c4747ae5c2ee366319cee323e6e48dddadac9066bb42c8409?context=repo
 
 
@@ -309,8 +322,19 @@ Elasticsearch рекомендуется устанавливать на выд�
 обновления версий, настройки сетевых соединений.
 
 - Мониторинг-стек на базе Prometheus и Grafana;
+Оба решения не требовательны к ресурсам. Можно развернуть их с использованием Docker, единственный момент Docker host должен быть отделен от основных серверов, 
+чтобы мониторинг продолжал работать, даже если основные сервера станут недоступны. 
+
 - MongoDB, как основное хранилище данных для java-приложения;
+Для базы MongoDB  данных лучше использовать кластер (из виртуальных или физический машини) или кластер построенный на docker, т.к. эта база даннах поддерживает
+горизонтальное масштабирование, что важно если используется одна база для большого кол-ва приложений. Единственный момент - т.к. мы говорим, про базу данных, 
+то необходимо предусмотреть резервирование в случае выхода из строя хоста, на котором расположены виртуальные машины или docker - хоста.
+
+
 - Gitlab сервер для реализации CI/CD процессов и приватный (закрытый) Docker Registry.
+
+Gitlab, при использовании до 1000 пользоватлей можно установить на один выделенный сервер (физический или виртуальный), при более большом кол-во пользоватей
+применяется кластер серверов. Можео использовать Docker, т.к. нет больших требований к ресурсам.
 
 ## Задача 3
 
