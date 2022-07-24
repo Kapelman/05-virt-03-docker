@@ -344,6 +344,80 @@ Gitlab, при использовании до 1000 пользоватлей м�
 - Добавьте еще один файл в папку ```/data``` на хостовой машине;
 - Подключитесь во второй контейнер и отобразите листинг и содержание файлов в ```/data``` контейнера.
 
+Решение:
+
+Шаг 1. Скачаем образы
+
+```
+vagrant@vagrant:~$ sudo docker pull centos
+Using default tag: latest
+latest: Pulling from library/centos
+a1d0c7532777: Pull complete
+Digest: sha256:a27fd8080b517143cbbbab9dfb7c8571c40d67d534bbdee55bd6c473f432b177
+Status: Downloaded newer image for centos:latest
+docker.io/library/centos:latest
+
+vagrant@vagrant:~$ sudo docker pull debian
+Using default tag: latest
+latest: Pulling from library/debian
+d836772a1c1f: Pull complete
+Digest: sha256:2ce44bbc00a79113c296d9d25524e15d423b23303fdbbe20190d2f96e0aeb251
+Status: Downloaded newer image for debian:latest
+docker.io/library/debian:latest
+```
+Шаг 2. Запустим контейнеры
+```
+vagrant@vagrant:~/data$ sudo docker run -t -v /home/vagrant/data:/var/data --name debian-kaplin -d debian
+bf19e40523f481a1ad8e7a63e8f4e9ffb8dbfc3033fc981025ff19a89a4e1813
+
+vagrant@vagrant:~/data$ sudo docker ps -a
+CONTAINER ID   IMAGE                    COMMAND                  CREATED          STATUS                    PORTS     NAMES
+bf19e40523f4   debian                   "bash"                   22 seconds ago   Up 21 seconds                       debian-kaplin
+0dce3d5bd63b   kaplin-nginx:first_ver   "/docker-entrypoint.…"   14 hours ago     Exited (0) 13 hours ago             gifted_liskov
+
+vagrant@vagrant:~/data$ sudo docker run -t -v /home/vagrant/data:/var/data --name centos-kaplin -d centos
+ed6c8c09f20902869ddd90239c513cf9bece5e07a0f56b73be27c0fed08e9b91
+vagrant@vagrant:~/data$ sudo docker ps -a
+CONTAINER ID   IMAGE                    COMMAND                  CREATED              STATUS                    PORTS     NAMES
+ed6c8c09f209   centos                   "/bin/bash"              4 seconds ago        Up 3 seconds                        centos-kaplin
+bf19e40523f4   debian                   "bash"                   About a minute ago   Up About a minute                   debian-kaplin
+0dce3d5bd63b   kaplin-nginx:first_ver   "/docker-entrypoint.…"   14 hours ago         Exited (0) 13 hours ago             gifted_liskov
+```
+Шаг 3. Зайдем в контейнер Debian и создадим файл
+```
+vagrant@vagrant:~/data$ sudo docker exec -it debian-kaplin bash
+
+root@bf19e40523f4:/var/data# echo "from debian" >debain.txt
+root@bf19e40523f4:/var/data# ls -al
+total 12
+drwxrwxr-x 2 1000 1000 4096 Jul 17 15:25 .
+drwxr-xr-x 1 root root 4096 Jul 17 15:20 ..
+-rw-r--r-- 1 root root   12 Jul 17 15:25 debain.txt
+root@bf19e40523f4:/var/data# cat debain.txt
+from debian
+```
+Шаг 4. Создадим еще один файл в той же директории, но с хостовой машины
+```
+vagrant@vagrant:~/data$ echo "from host" > host.txt
+```
+
+Шаг 5. Зайдем на вторую машину с Centos и посмотрим содержимое обоих файлов:
+```
+vagrant@vagrant:~/data$ sudo docker exec -it centos-kaplin bash
+[root@ed6c8c09f209 /]# cd /var/data
+[root@ed6c8c09f209 data]# ls -al
+total 16
+drwxrwxr-x 2 1000 1000 4096 Jul 17 15:26 .
+drwxr-xr-x 1 root root 4096 Jul 17 15:22 ..
+-rw-r--r-- 1 root root   12 Jul 17 15:25 debain.txt
+-rw-rw-r-- 1 1000 1000   10 Jul 17 15:26 host.txt
+[root@ed6c8c09f209 data]# cat debain.txt
+from debian
+[root@ed6c8c09f209 data]# cat host.txt
+from host
+[root@ed6c8c09f209 data]#
+```
+
 ## Задача 4 (*)
 
 Воспроизвести практическую часть лекции самостоятельно.
